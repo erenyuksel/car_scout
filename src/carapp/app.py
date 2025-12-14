@@ -1,25 +1,32 @@
 """Console-based CAR SCOUT application."""
 
+from datetime import datetime
+
 # Path to the CSV file used to persist car records between runs.
 DATA_FILE = "cars_data.csv"  # file with car data
 
 
 # ---------- INPUT VALIDATION ----------
 
-def get_int(prompt: str) -> int:
-    """Ask user for an integer (whole number) and repeat until valid."""
-    # Loop forever until a valid integer is returned.
+def get_int(prompt: str, min_value: int | None = None, max_value: int | None = None) -> int:
+    """Ask user for an integer and (optionally) enforce a min/max range."""
     while True:
-        # Collect raw user input as text.
         text = input(prompt)
         try:
-            # Attempt to convert the input to an int; will raise on bad input.
-            value = int(text)  # try convert to int
-            # If conversion works, immediately return the numeric value.
+            value = int(text)
+
+            if min_value is not None and value < min_value:
+                print(f"Please enter a number above {min_value}.")
+                continue
+
+            if max_value is not None and value > max_value:
+                print(f"Please enter a number under {max_value}.")
+                continue
+
             return value
         except ValueError:
-            # If conversion fails, inform the user and repeat the loop.
             print("Please enter a whole number (e.g. 2018).")
+
 
 
 def get_float(prompt: str) -> float:
@@ -36,6 +43,24 @@ def get_float(prompt: str) -> float:
         except ValueError:
             # If conversion fails, inform the user and repeat the loop.
             print("Please enter a number (e.g. 12345.50).")
+
+
+def get_non_empty_str(prompt: str) -> str:
+    """Ask for non-empty text and repeat until something is entered."""
+    while True:
+        text = input(prompt).strip()
+        if text != "":
+            return text
+        print("This field cannot be empty. Please enter something.")
+
+
+def get_transmission(prompt: str = "Transmission (manual/automatic): ") -> str:
+    """Ask for transmission type and only accept 'manual' or 'automatic'."""
+    while True:
+        trans = input(prompt).strip().lower()
+        if trans in ("manual", "automatic"):
+            return trans
+        print("Please type either 'manual' or 'automatic'.")
 
 
 # ---------- FILE FUNCTIONS ----------
@@ -149,13 +174,14 @@ def add_car(cars: list[dict]) -> None:
     # Section header for clarity in the console.
     print("\n--- ADD CAR ---")
     # Gather textual fields directly.
-    brand = input("Brand: ")
-    model = input("Model: ")
+    brand = get_non_empty_str("Brand: ")
+    model = get_non_empty_str("Model: ")
     # Collect numeric fields using validators to enforce correct types.
-    year = get_int("Year: ")
-    km = get_int("Kilometers: ")
+    current_year = datetime.now().year
+    year = get_int("Year: ", min_value=1886, max_value=current_year)
+    km = get_int("Kilometers: ", min_value=0)
     # Normalize transmission input by trimming spaces and lowering case.
-    trans = input("Transmission (manual/automatic): ").strip().lower()
+    trans = get_transmission()
     # Gather price as a validated float.
     price = get_float("Price: ")
 
